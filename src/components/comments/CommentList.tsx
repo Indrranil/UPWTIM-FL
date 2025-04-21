@@ -1,132 +1,139 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Comment } from "@/types/item";
-import { mockUsers } from "@/lib/mockData";
-import { formatDistanceToNow } from "date-fns";
+import { commentsApi } from "@/services/api";
+import { useToast } from "@/components/ui/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { getUserById, formatUserIdentifier } from "@/lib/userUtils";
 
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
-import { MessageSquare, RefreshCw } from "lucide-react";
-
-interface CommentListProps {
+const CommentList: React.FC<{
   comments: Comment[];
   itemId: string;
-  onAddComment: (content: string) => Promise<void>;
-  isLoading: boolean;
   onRefresh?: () => void;
-}
-
-const CommentList: React.FC<CommentListProps> = ({
-  comments,
-  itemId,
-  onAddComment,
-  isLoading,
-  onRefresh,
-}) => {
+}> = ({ comments, itemId, onRefresh }) => {
   const { user } = useAuth();
-  const [commentContent, setCommentContent] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [newComment, setNewComment] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentContent.trim()) return;
+    if (!user || !newComment.trim() || isSubmitting) return;
 
-    await onAddComment(commentContent);
-    setCommentContent("");
+    setIsSubmitting(true);
+
+    try {
+      await commentsApi.createComment({
+        itemId,
+        content: newComment.trim(),
+      });
+
+      setNewComment("");
+
+      toast({
+        title: "Comment Posted",
+        description: "Your comment has been added successfully.",
+      });
+
+      queryClient.invalidateQueries({ queryKey: ["comments", itemId] });
+
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error("Error posting comment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to post your comment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  if (!user) return null;
+  if (comments.length === 0) {
+    return (
+      <div className="py-8 text-center text-gray-500">
+        <p>No comments yet. Be the first to comment!</p>
+        {user ? (
+          <form onSubmit={handleSubmit} className="mt-4">
+            <textarea
+              className="w-full p-2 border rounded-md resize-y"
+              rows={3}
+              placeholder="Write a comment..."
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <button
+              type="submit"
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50"
+              disabled={!newComment.trim() || isSubmitting}
+            >
+              {isSubmitting ? "Posting..." : "Post Comment"}
+            </button>
+          </form>
+        ) : (
+          <p className="mt-4 text-sm">Please log in to comment.</p>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Discussion ({comments.length})
-          </h2>
-          {onRefresh && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isLoading}
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`}
-              />
-              Refresh
-            </Button>
-          )}
-        </div>
+    <div className="space-y-6">
+      {comments.map((comment) => {
+        const commenterName = formatUserIdentifier(
+          comment.userId,
+          comment.userName,
+        );
+        const isCurrentUser = user && user.id === comment.userId;
 
-        <form onSubmit={handleSubmit} className="mb-6">
-          <Textarea
-            placeholder="Add a comment..."
-            value={commentContent}
-            onChange={(e) => setCommentContent(e.target.value)}
-            className="mb-2"
-            rows={3}
-          />
-          <Button
-            type="submit"
-            disabled={isLoading || !commentContent.trim()}
-            className="ml-auto block"
+        return (
+          <div
+            key={comment.id}
+            className="pb-4 border-b border-gray-200 last:border-0"
           >
-            {isLoading ? "Posting..." : "Post Comment"}
-          </Button>
-        </form>
-
-        {comments.length === 0 ? (
-          <div className="text-center py-6 text-gray-500">
-            No comments yet. Start the conversation!
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {comments.map((comment, index) => {
-              // Get the actual user info or create fallback
-              const commenter = mockUsers.find(
-                (u) => u.id === comment.userId,
-              ) || {
-                id: comment.userId,
-                name: comment.userId === user?.id ? user.name : "Unknown User",
-                email: "unknown@example.com",
-              };
-
-              return (
-                <div key={comment.id}>
-                  {index > 0 && <Separator className="my-4" />}
-                  <div className="flex gap-3">
-                    <Avatar>
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${commenter.name}`}
-                        alt={commenter.name}
-                      />
-                      <AvatarFallback>
-                        {commenter.name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">{commenter.name}</h4>
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(comment.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-gray-700">{comment.content}</p>
-                    </div>
-                  </div>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 flex-shrink-0">
+                {commenterName.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-1">
+                  <p className="font-medium">
+                    {commenterName} {isCurrentUser && "(You)"}
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </span>
                 </div>
-              );
-            })}
+                <p className="text-gray-700">{comment.content}</p>
+              </div>
+            </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        );
+      })}
+
+      {user && (
+        <form onSubmit={handleSubmit} className="mt-6">
+          <textarea
+            className="w-full p-2 border rounded-md resize-y"
+            rows={3}
+            placeholder="Write a comment..."
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            disabled={isSubmitting}
+          />
+          <button
+            type="submit"
+            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md disabled:opacity-50"
+            disabled={!newComment.trim() || isSubmitting}
+          >
+            {isSubmitting ? "Posting..." : "Post Comment"}
+          </button>
+        </form>
+      )}
+    </div>
   );
 };
 

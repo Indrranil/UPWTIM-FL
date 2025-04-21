@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useItems } from "@/contexts/ItemsContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockUsers } from "@/lib/mockData";
 import { format } from "date-fns";
 import ClaimForm from "@/components/claims/ClaimForm";
 import ClaimItem from "@/components/claims/ClaimItem";
@@ -11,6 +10,7 @@ import { Comment, ItemStatus } from "@/types/item";
 import { CATEGORIES, LOCATIONS } from "@/lib/constants";
 import { commentsApi, itemsApi } from "@/services/api";
 import ImageModal from "@/components/ui/image-modal";
+import { getUserById, formatUserIdentifier } from "@/lib/userUtils";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,14 +30,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface MockUser {
-  id: string;
-  name: string;
-  email: string;
-  department?: string;
-  isAuthenticated?: boolean;
-}
+import { User } from "@/types/auth";
 
 const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -102,7 +95,8 @@ const ItemDetail: React.FC = () => {
     );
   }
 
-  const itemOwner = mockUsers.find((u) => u.id === item.userId);
+  const itemOwnerName = formatUserIdentifier(item.userId, item.userName);
+
   const categoryLabel =
     CATEGORIES.find((cat) => cat.value === item.category)?.label ||
     item.category;
@@ -129,8 +123,8 @@ const ItemDetail: React.FC = () => {
     !userHasClaimed &&
     !approvedClaim;
 
-  const approvedClaimant = approvedClaim
-    ? mockUsers.find((u) => u.id === approvedClaim.claimantId)
+  const approvedClaimantName = approvedClaim
+    ? formatUserIdentifier(approvedClaim.claimantId, approvedClaim.claimantName)
     : null;
 
   const showDiscussion =
@@ -315,10 +309,10 @@ const ItemDetail: React.FC = () => {
                     <span>{locationLabel}</span>
                   </div>
 
-                  {itemOwner && (
+                  {itemOwnerName && (
                     <div className="flex items-center gap-1 text-gray-600">
                       <UserIcon className="h-4 w-4" />
-                      <span>Reported by {itemOwner.name}</span>
+                      <span>Reported by {itemOwnerName}</span>
                     </div>
                   )}
                 </div>
@@ -395,26 +389,40 @@ const ItemDetail: React.FC = () => {
                   ) : (
                     <div className="space-y-4">
                       {comments.map((comment, index) => {
-                        let commenter: MockUser = mockUsers.find(
-                          (u) => u.id === comment.userId,
-                        ) as MockUser;
+                        let commenter: User = getUserById(comment.userId) || {
+                          id: comment.userId,
+                          name: "User",
+                          email: "unknown@example.com",
+                        };
 
                         if (!commenter) {
                           if (comment.userId === item.userId) {
-                            commenter = (itemOwner as MockUser) || {
-                              id: item.userId,
-                              name: "Item Reporter",
-                              email: "unknown@example.com",
-                            };
+                            commenter = itemOwnerName
+                              ? {
+                                  id: item.userId,
+                                  name: itemOwnerName,
+                                  email: "unknown@example.com",
+                                }
+                              : {
+                                  id: item.userId,
+                                  name: "Item Reporter",
+                                  email: "unknown@example.com",
+                                };
                           } else if (
                             approvedClaim &&
                             comment.userId === approvedClaim.claimantId
                           ) {
-                            commenter = (approvedClaimant as MockUser) || {
-                              id: approvedClaim.claimantId,
-                              name: "Claimant",
-                              email: "unknown@example.com",
-                            };
+                            commenter = approvedClaimantName
+                              ? {
+                                  id: approvedClaim.claimantId,
+                                  name: approvedClaimantName,
+                                  email: "unknown@example.com",
+                                }
+                              : {
+                                  id: approvedClaim.claimantId,
+                                  name: "Claimant",
+                                  email: "unknown@example.com",
+                                };
                           } else if (user && comment.userId === user.id) {
                             commenter = {
                               id: user.id,
@@ -601,9 +609,7 @@ const ItemDetail: React.FC = () => {
                       {claims
                         .filter((claim) => claim.status === "pending")
                         .map((claim) => {
-                          const claimant = mockUsers.find(
-                            (u) => u.id === claim.claimantId,
-                          ) || {
+                          const claimant = getUserById(claim.claimantId) || {
                             id: claim.claimantId,
                             name: claim.claimantName || "User",
                             email: "unknown@example.com",
@@ -637,9 +643,7 @@ const ItemDetail: React.FC = () => {
                       {claims
                         .filter((claim) => claim.status !== "pending")
                         .map((claim) => {
-                          const claimant = mockUsers.find(
-                            (u) => u.id === claim.claimantId,
-                          ) || {
+                          const claimant = getUserById(claim.claimantId) || {
                             id: claim.claimantId,
                             name: claim.claimantName || "User",
                             email: "unknown@example.com",
@@ -696,7 +700,7 @@ const ItemDetail: React.FC = () => {
                       <MessageSquare className="h-4 w-4 text-yellow-600 mr-2" />
                       <p className="text-yellow-700 text-sm">
                         Use the discussion thread to coordinate with{" "}
-                        {itemOwner?.name}.
+                        {itemOwnerName}.
                       </p>
                     </div>
                   </div>

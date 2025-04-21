@@ -56,6 +56,16 @@ export const authApi = {
     const response = await api.get("/auth/me");
     return response.data;
   },
+
+  sendOtp: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post("/auth/send-otp", { email });
+    return response.data;
+  },
+
+  verifyOtp: async (email: string, otp: string): Promise<boolean> => {
+    const response = await api.post("/auth/verify-email", { email, otp });
+    return response.data.valid;
+  },
 };
 
 // Items API endpoints

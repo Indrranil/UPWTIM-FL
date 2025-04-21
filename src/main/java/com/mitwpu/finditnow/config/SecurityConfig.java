@@ -37,12 +37,14 @@ public class SecurityConfig {
                         "/auth/register",
                         "/auth/verify-email",
                         "/auth/send-otp",
+                        "/auth/verify-otp",
                         "/items",
                         "/items/{id}",
                         "/api/auth/login",
                         "/api/auth/register",
                         "/api/auth/verify-email",
                         "/api/auth/send-otp",
+                        "/api/auth/verify-otp",
                         "/api/items",
                         "/api/items/{id}"
                     )

@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Claim } from "@/types/item";
-import { mockUsers } from "@/lib/mockData";
 import { claimsApi } from "@/services/api";
 import { useQueryClient } from "@tanstack/react-query";
 import ImageModal from "@/components/ui/image-modal";
+import { getUserById, formatUserIdentifier } from "@/lib/userUtils";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle, XCircle, AlertCircle, Trash2 } from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Trash2, Image } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ClaimItemProps {
@@ -29,19 +29,9 @@ const ClaimItem: React.FC<ClaimItemProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
-  console.log("Rendering claim:", claim);
-
   // Get claimant info - using the claimantName property if available
-  const claimant = claim.claimantName
-    ? { name: claim.claimantName }
-    : mockUsers.find((u) => u.id === claim.claimantId) || {
-        name: claim.claimantId
-          ? claim.claimantId.substring(0, 8) + "..."
-          : "Unknown User",
-      };
-
-  const displayName =
-    claimant.name || `User ${claim.claimantId?.substring(0, 8) || ""}...`;
+  const claimantName =
+    claim.claimantName || formatUserIdentifier(claim.claimantId);
 
   const handleAction = async (status: "approved" | "rejected") => {
     if (!user || isLoading) return;
@@ -122,37 +112,26 @@ const ClaimItem: React.FC<ClaimItemProps> = ({
   const isClaimant = user && user.id === claim.claimantId;
   const canDelete = isClaimant && claim.status === "pending";
 
-  // If we don't have a full claim object with description/justification, show a simplified view
-  const hasDetails = claim.description || claim.justification;
-
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-4">
         <div className="flex justify-between mb-2">
-          <div className="font-medium">{displayName}</div>
+          <div className="font-medium">{claimantName}</div>
           {getStatusBadge()}
         </div>
 
-        {hasDetails ? (
-          <p className="text-sm text-gray-600 mb-3">
-            {claim.description ||
-              claim.justification ||
-              "No description provided"}
-          </p>
-        ) : (
-          <p className="text-sm text-gray-400 italic mb-3">
-            Claim ID: {claim.id}
-          </p>
-        )}
+        <p className="text-sm text-gray-600 mb-3">
+          {claim.justification || "No justification provided"}
+        </p>
 
-        {(claim.proofImageUrl || claim.proofUrl) && (
+        {claim.proofImageUrl && (
           <div className="mb-3">
             <div
               className="relative aspect-video bg-gray-100 overflow-hidden rounded-md cursor-pointer"
               onClick={() => setIsImageModalOpen(true)}
             >
               <img
-                src={claim.proofImageUrl || claim.proofUrl}
+                src={claim.proofImageUrl}
                 alt="Proof image"
                 className="w-full h-full object-cover"
               />
@@ -214,14 +193,12 @@ const ClaimItem: React.FC<ClaimItemProps> = ({
       </CardContent>
 
       {/* Image Modal for expanding proof images */}
-      {(claim.proofImageUrl || claim.proofUrl) && (
-        <ImageModal
-          isOpen={isImageModalOpen}
-          onClose={() => setIsImageModalOpen(false)}
-          imageUrl={claim.proofImageUrl || claim.proofUrl || ""}
-          altText="Claim proof"
-        />
-      )}
+      <ImageModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        imageUrl={claim.proofImageUrl || ""}
+        altText="Claim proof"
+      />
     </Card>
   );
 };
