@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 
 // Define schemas for login and registration
 const loginSchema = z.object({
@@ -47,7 +47,9 @@ const registerSchema = z
       }),
     department: z.string().min(1, "Please select your department"),
     password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -59,9 +61,17 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface AuthFormProps {
   type: "login" | "register";
+  verifiedEmail?: string;
+  prefilledData?: RegisterFormValues;
+  onUserInfoSubmit?: (data: RegisterFormValues) => void;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
+const AuthForm: React.FC<AuthFormProps> = ({
+  type,
+  verifiedEmail,
+  prefilledData,
+  onUserInfoSubmit,
+}) => {
   const { login, register: registerUser, isLoading, error } = useAuth();
   const navigate = useNavigate();
 
@@ -75,9 +85,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
 
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
+    defaultValues: prefilledData || {
       name: "",
-      email: "",
+      email: verifiedEmail || "",
       department: "",
       password: "",
       confirmPassword: "",
@@ -95,6 +105,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   };
 
   const onRegisterSubmit = async (values: RegisterFormValues) => {
+    if (onUserInfoSubmit) {
+      onUserInfoSubmit(values);
+      return;
+    }
+
     const success = await registerUser({
       name: values.name,
       email: values.email,
@@ -111,13 +126,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const onSubmit = type === "login" ? onLoginSubmit : onRegisterSubmit;
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center mb-6">
-        {type === "login" ? "Login to Your Account" : "Create an Account"}
-      </h2>
+    <div
+      className={
+        type === "register"
+          ? ""
+          : "w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md"
+      }
+    >
+      {type === "login" && (
+        <h2 className="text-2xl font-bold text-center mb-6">
+          Login to Your Account
+        </h2>
+      )}
 
       <Form {...currentForm}>
-        <form onSubmit={currentForm.handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={currentForm.handleSubmit(onSubmit)}
+          className="space-y-4"
+        >
           {type === "register" && (
             <FormField
               control={registerForm.control}
@@ -145,6 +171,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                     type="email"
                     placeholder="Enter your MIT-WPU email"
                     {...field}
+                    disabled={
+                      type === "register" &&
+                      (!!verifiedEmail || !!prefilledData)
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -162,6 +192,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={!!prefilledData}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -170,7 +201,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
                     </FormControl>
                     <SelectContent>
                       {DEPARTMENTS.map((department) => (
-                        <SelectItem key={department.value} value={department.value}>
+                        <SelectItem
+                          key={department.value}
+                          value={department.value}
+                        >
                           {department.label}
                         </SelectItem>
                       ))}
@@ -189,7 +223,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input type="password" placeholder="Enter your password" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="Enter your password"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -216,29 +254,41 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
             />
           )}
 
-          <Button type="submit" className="w-full bg-mitwpu-navy hover:bg-mitwpu-navy/90" disabled={isLoading}>
-            {isLoading ? "Processing..." : type === "login" ? "Login" : "Register"}
+          <Button
+            type="submit"
+            className="w-full bg-mitwpu-navy hover:bg-mitwpu-navy/90"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {type === "login"
+                  ? "Logging in..."
+                  : onUserInfoSubmit
+                    ? "Continue"
+                    : "Register"}
+              </>
+            ) : type === "login" ? (
+              "Login"
+            ) : onUserInfoSubmit ? (
+              "Continue"
+            ) : (
+              "Register"
+            )}
           </Button>
         </form>
       </Form>
 
-      <div className="mt-4 text-center">
-        {type === "login" ? (
+      {type === "login" && (
+        <div className="mt-4 text-center">
           <p>
             Don't have an account?{" "}
             <Link to="/register" className="text-mitwpu-maroon hover:underline">
               Register
             </Link>
           </p>
-        ) : (
-          <p>
-            Already have an account?{" "}
-            <Link to="/login" className="text-mitwpu-maroon hover:underline">
-              Login
-            </Link>
-          </p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

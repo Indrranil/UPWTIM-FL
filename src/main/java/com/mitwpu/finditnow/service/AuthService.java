@@ -1,4 +1,3 @@
-
 package com.mitwpu.finditnow.service;
 
 import com.mitwpu.finditnow.config.JwtTokenProvider;
@@ -39,32 +38,33 @@ public class AuthService {
 
         // Create new user
         User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .department(request.getDepartment())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role("ROLE_USER")
-                .build();
+            .name(request.getName())
+            .email(request.getEmail())
+            .department(request.getDepartment())
+            .password(passwordEncoder.encode(request.getPassword()))
+            .role("ROLE_USER")
+            .build();
 
         User savedUser = userRepository.save(user);
         String token = jwtTokenProvider.generateToken(user);
 
         return AuthResponse.builder()
-                .id(savedUser.getId())
-                .name(savedUser.getName())
-                .email(savedUser.getEmail())
-                .department(savedUser.getDepartment())
-                .token(token)
-                .isAuthenticated(true)
-                .build();
+            .id(savedUser.getId())
+            .name(savedUser.getName())
+            .email(savedUser.getEmail())
+            .department(savedUser.getDepartment())
+            .role(user.getRole())
+            .token(token)
+            .isAuthenticated(true)
+            .build();
     }
 
     public AuthResponse login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
+            new UsernamePasswordAuthenticationToken(
+                request.getEmail(),
+                request.getPassword()
+            )
         );
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -72,27 +72,31 @@ public class AuthService {
         String token = jwtTokenProvider.generateToken(user);
 
         return AuthResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .department(user.getDepartment())
-                .token(token)
-                .isAuthenticated(true)
-                .build();
+            .id(user.getId())
+            .name(user.getName())
+            .email(user.getEmail())
+            .department(user.getDepartment())
+            .role(user.getRole())
+            .token(token)
+            .isAuthenticated(true)
+            .build();
     }
 
     public UserDTO getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = SecurityContextHolder.getContext()
+            .getAuthentication();
         String email = authentication.getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = userRepository
+            .findByEmail(email)
+            .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         return UserDTO.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .department(user.getDepartment())
-                .isAuthenticated(true)
-                .build();
+            .id(user.getId())
+            .name(user.getName())
+            .email(user.getEmail())
+            .department(user.getDepartment())
+            .role(user.getRole())
+            .isAuthenticated(true)
+            .build();
     }
 }

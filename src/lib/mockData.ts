@@ -1,128 +1,173 @@
+import { Item, Claim, Comment } from "@/types/item";
 
-import { Item, Claim } from "@/types/item";
-
+// Mock lost and found items
 export const mockItems: Item[] = [
   {
     id: "1",
-    title: "MacBook Pro Laptop",
-    description: "Silver MacBook Pro (13-inch, 2020) last seen in Chanakya Building Room 204.",
-    imageUrl: "https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=500&h=500&fit=crop",
-    category: "electronics",
-    date: "2025-04-10",
-    location: "chanakya",
+    title: "Lost Black Wallet",
+    description: "Lost my black leather wallet near the library.",
+    imageUrl: "/placeholder.svg",
+    category: "Wallet",
+    type: "personal", // Added required type field
+    date: "2025-04-15",
+    location: "Main Library",
     status: "lost",
     userId: "user1",
-    createdAt: "2025-04-10T10:00:00Z",
-    updatedAt: "2025-04-10T10:00:00Z",
-    secretQuestion: "What sticker is on the laptop?",
-    secretAnswer: "MIT-WPU logo"
+    createdAt: "2025-04-15T10:30:00Z",
+    updatedAt: "2025-04-15T10:30:00Z",
+    secretQuestion: "What was inside the wallet?",
+    secretAnswer: "Student ID and 500 rupees",
   },
   {
     id: "2",
-    title: "Water Bottle",
-    description: "Blue metal water bottle with a MIT-WPU logo sticker.",
-    imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500&h=500&fit=crop",
-    category: "other",
-    date: "2025-04-09",
-    location: "aryabhatta",
+    title: "Found Blue Umbrella",
+    description: "Found a blue umbrella at the cafeteria.",
+    imageUrl: "/placeholder.svg",
+    category: "Umbrella",
+    type: "personal", // Added required type field
+    date: "2025-04-14",
+    location: "Student Cafeteria",
     status: "found",
     userId: "user2",
-    createdAt: "2025-04-09T14:30:00Z",
-    updatedAt: "2025-04-09T14:30:00Z",
-    secretQuestion: "What color is the logo on the bottle?",
-    secretAnswer: "Red and white"
+    createdAt: "2025-04-14T14:45:00Z",
+    updatedAt: "2025-04-14T14:45:00Z",
+    secretQuestion: "What is the brand of the umbrella?",
+    secretAnswer: "Raindrops",
   },
   {
     id: "3",
-    title: "Calculator",
-    description: "Scientific calculator (Casio fx-991EX) found in the library.",
-    imageUrl: "https://images.unsplash.com/photo-1624913503273-5f9c4e980dba?w=500&h=500&fit=crop",
-    category: "electronics",
-    date: "2025-04-08",
-    location: "vyas",
-    status: "found",
+    title: "Lost MacBook Charger",
+    description: "Lost my MacBook charger in Room 302.",
+    imageUrl: "/placeholder.svg",
+    category: "Electronics",
+    type: "electronics", // Added required type field
+    date: "2025-04-13",
+    location: "Room 302, Engineering Building",
+    status: "lost",
     userId: "user3",
-    createdAt: "2025-04-08T16:45:00Z",
-    updatedAt: "2025-04-08T16:45:00Z",
-    secretQuestion: "What is written on the back of the calculator?",
-    secretAnswer: "Student name: Rohit"
+    createdAt: "2025-04-13T09:15:00Z",
+    updatedAt: "2025-04-13T09:15:00Z",
+    secretQuestion: "What wattage is the charger?",
+    secretAnswer: "60W",
   },
   {
     id: "4",
-    title: "ID Card",
-    description: "Found a student ID card near the cafeteria.",
-    imageUrl: "https://images.unsplash.com/photo-1599032909756-5deb82fea3b0?w=500&h=500&fit=crop",
-    category: "id-card",
-    date: "2025-04-11",
-    location: "gargi",
+    title: "Found Student ID Card",
+    description: "Found a student ID card near the sports complex.",
+    imageUrl: "/placeholder.svg",
+    category: "ID Card",
+    type: "id", // Added required type field
+    date: "2025-04-12",
+    location: "Sports Complex",
     status: "found",
-    userId: "user2",
-    createdAt: "2025-04-11T12:15:00Z",
-    updatedAt: "2025-04-11T12:15:00Z",
-    secretQuestion: "What is the ID number?",
-    secretAnswer: "2023CS1234"
+    userId: "user4",
+    createdAt: "2025-04-12T16:20:00Z",
+    updatedAt: "2025-04-12T16:20:00Z",
+    secretQuestion: "What is the student ID number?",
+    secretAnswer: "MIT2023456",
   },
   {
     id: "5",
-    title: "Headphones",
-    description: "Black Sony WH-1000XM4 headphones lost in the library.",
-    imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&h=500&fit=crop",
-    category: "electronics",
-    date: "2025-04-07",
-    location: "vyas",
+    title: "Lost Prescription Glasses",
+    description: "Lost my prescription glasses with black frame.",
+    imageUrl: "/placeholder.svg",
+    category: "Glasses",
+    type: "personal", // Added required type field
+    date: "2025-04-11",
+    location: "Physics Lab",
     status: "lost",
-    userId: "user1",
-    createdAt: "2025-04-07T09:20:00Z",
-    updatedAt: "2025-04-07T09:20:00Z",
-    secretQuestion: "What is special about the right ear cup?",
-    secretAnswer: "Small scratch"
-  }
+    userId: "user5",
+    createdAt: "2025-04-11T11:10:00Z",
+    updatedAt: "2025-04-11T11:10:00Z",
+    secretQuestion: "What is the power of the lenses?",
+    secretAnswer: "-2.5",
+  },
 ];
 
+// Mock claims data
 export const mockClaims: Claim[] = [
   {
     id: "claim1",
-    itemId: "2",
-    claimantId: "user1",
-    answer: "Red and white",
-    justification: "I lost my blue water bottle with a MIT-WPU logo sticker yesterday in the Aryabhatta building.",
-    proofImageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=500&h=500&fit=crop",
+    itemId: "1",
+    claimantId: "user6",
     status: "pending",
-    createdAt: "2025-04-10T16:45:00Z",
-    updatedAt: "2025-04-10T16:45:00Z"
+    description:
+      "I believe this is my wallet because it matches the description and I lost it in the same location.",
+    createdAt: "2025-04-16T08:00:00Z",
+    updatedAt: "2025-04-16T08:00:00Z",
+    justification:
+      "Detailed explanation of why the claimant believes the item belongs to them.",
+    proofUrl: "/placeholder.svg",
+    answer: "Student ID and 500 rupees",
   },
   {
     id: "claim2",
-    itemId: "3",
-    claimantId: "user1",
-    answer: "Student name: Rohit",
-    justification: "I lost my calculator during a math class in the Vyas building.",
+    itemId: "2",
+    claimantId: "user7",
     status: "approved",
-    createdAt: "2025-04-09T11:30:00Z",
-    updatedAt: "2025-04-09T14:20:00Z"
-  }
+    description: "This umbrella looks exactly like the one I lost last week.",
+    createdAt: "2025-04-15T12:00:00Z",
+    updatedAt: "2025-04-15T12:00:00Z",
+    justification:
+      "Detailed explanation of why the claimant believes the item belongs to them.",
+    proofUrl: "/placeholder.svg",
+    answer: "Raindrops",
+  },
+  {
+    id: "claim3",
+    itemId: "3",
+    claimantId: "user8",
+    status: "rejected",
+    description:
+      "I think this might be my charger, but I'm not completely sure.",
+    createdAt: "2025-04-14T18:00:00Z",
+    updatedAt: "2025-04-14T18:00:00Z",
+    justification:
+      "Detailed explanation of why the claimant believes the item belongs to them.",
+    proofUrl: "/placeholder.svg",
+    notes: "Claim rejected due to insufficient evidence.",
+    answer: "Wrong answer",
+  },
+];
+
+// Mock comments data
+export const mockComments: Comment[] = [
+  {
+    id: "comment1",
+    itemId: "1",
+    userId: "user9",
+    userName: "Alice",
+    text: "I saw someone looking for a wallet yesterday, might be worth checking with the library's lost and found.",
+    createdAt: "2025-04-15T11:00:00Z",
+  },
+  {
+    id: "comment2",
+    itemId: "2",
+    userId: "user10",
+    userName: "Bob",
+    text: "That umbrella looks familiar, I think I've seen it around the engineering department.",
+    createdAt: "2025-04-14T15:00:00Z",
+  },
+  {
+    id: "comment3",
+    itemId: "3",
+    userId: "user11",
+    userName: "Charlie",
+    text: "I might have seen that charger in the lab, I'll keep an eye out for it.",
+    createdAt: "2025-04-13T10:00:00Z",
+  },
 ];
 
 export const mockUsers = [
-  {
-    id: "user1",
-    name: "Rohit Sharma",
-    email: "rohit.sharma@mitwpu.edu.in",
-    department: "computer",
-    isAuthenticated: true
-  },
-  {
-    id: "user2",
-    name: "Priya Patel",
-    email: "priya.patel@mitwpu.edu.in",
-    department: "design",
-    isAuthenticated: true
-  },
-  {
-    id: "user3",
-    name: "Aryan Singh",
-    email: "aryan.singh@mitwpu.edu.in",
-    department: "mechanical",
-    isAuthenticated: true
-  }
+  { id: "user1", name: "Alice" },
+  { id: "user2", name: "Bob" },
+  { id: "user3", name: "Charlie" },
+  { id: "user4", name: "Diana" },
+  { id: "user5", name: "Ethan" },
+  { id: "user6", name: "Fiona" },
+  { id: "user7", name: "George" },
+  { id: "user8", name: "Hannah" },
+  { id: "user9", name: "Ivan" },
+  { id: "user10", name: "Jane" },
+  { id: "user11", name: "Kevin" },
 ];

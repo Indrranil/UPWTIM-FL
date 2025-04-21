@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,8 +14,17 @@ import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import CreateItem from "@/pages/CreateItem";
 import NotFound from "@/pages/NotFound";
+import Admin from "@/pages/Admin";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,13 +42,14 @@ const App = () => (
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
               </Route>
-              
+
               {/* Protected Routes */}
               <Route path="/" element={<Layout requireAuth />}>
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="create" element={<CreateItem />} />
+                <Route path="admin" element={<Admin />} />
               </Route>
-              
+
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>

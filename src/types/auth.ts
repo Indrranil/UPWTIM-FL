@@ -1,11 +1,11 @@
-
 export interface User {
   id: string;
   name: string;
   email: string;
-  department: string;
+  department?: string;
   isAuthenticated: boolean;
-  token?: string; // JWT token received from backend
+  token?: string;
+  role?: string;
 }
 
 export interface AuthState {
@@ -25,4 +25,9 @@ export interface RegisterCredentials {
   department: string;
   password: string;
   confirmPassword: string;
+}
+
+export interface VerificationData {
+  email: string;
+  otp: string;
 }

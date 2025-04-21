@@ -1,4 +1,3 @@
-
 package com.mitwpu.finditnow.config;
 
 import lombok.RequiredArgsConstructor;
@@ -27,37 +26,57 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http)
+        throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    "/auth/login",
-                    "/auth/register",
-                    "/items",
-                    "/items/{id}"
-                ).permitAll()
-                .anyRequest().authenticated()
+            .authorizeHttpRequests(auth ->
+                auth
+                    .requestMatchers(
+                        "/auth/login",
+                        "/auth/register",
+                        "/auth/verify-email",
+                        "/auth/send-otp",
+                        "/items",
+                        "/items/{id}",
+                        "/api/auth/login",
+                        "/api/auth/register",
+                        "/api/auth/verify-email",
+                        "/api/auth/send-otp",
+                        "/api/items",
+                        "/api/items/{id}"
+                    )
+                    .permitAll()
+                    .requestMatchers("/admin/**", "/api/admin/**")
+                    .hasAnyAuthority("ADMIN", "ROLE_ADMIN")
+                    .anyRequest()
+                    .authenticated()
             )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
             .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(
+                jwtAuthFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider authProvider =
+            new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+        AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 

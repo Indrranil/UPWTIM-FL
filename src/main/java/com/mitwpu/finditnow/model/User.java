@@ -1,6 +1,7 @@
-
 package com.mitwpu.finditnow.model;
 
+import java.util.Collection;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,28 +13,26 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Document(collection = "users")
 public class User implements UserDetails {
+
     @Id
     private String id;
-    
+
     private String name;
-    
+
     @Indexed(unique = true)
     private String email;
-    
+
     private String department;
-    
+
     private String password;
-    
-    private String role;
+
+    private String role; // "USER" or "ADMIN"
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

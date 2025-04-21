@@ -1,33 +1,37 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Menu, 
-  X, 
-  User, 
-  LogOut, 
-  Search, 
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  Search,
   Plus,
-  LayoutDashboard
+  LayoutDashboard,
+  Shield,
 } from "lucide-react";
 
 const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  // Debug console log to check user role
+  console.log("Current user:", user);
+  console.log("Is admin?", isAdmin);
 
   return (
     <header className="bg-mitwpu-navy text-white shadow-md">
@@ -50,9 +54,21 @@ const Navbar: React.FC = () => {
                 <Link to="/dashboard" className="hover:text-gray-300">
                   Dashboard
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="bg-yellow-600 text-white px-3 py-1.5 rounded flex items-center space-x-1 hover:bg-yellow-700 transition-colors"
+                  >
+                    <Shield className="w-4 h-4 mr-1" />
+                    Admin
+                  </Link>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="text-white hover:text-gray-300">
+                    <Button
+                      variant="ghost"
+                      className="text-white hover:text-gray-300"
+                    >
                       <User className="mr-2 h-4 w-4" />
                       {user.name.split(" ")[0]}
                     </Button>
@@ -72,8 +88,19 @@ const Navbar: React.FC = () => {
                         Report Item
                       </Link>
                     </DropdownMenuItem>
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin" className="w-full cursor-pointer">
+                            <Shield className="mr-2 h-4 w-4" />
+                            Admin Panel
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={logout}
                       className="text-red-500 focus:text-red-500 cursor-pointer"
                     >
@@ -85,14 +112,14 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="px-4 py-2 border border-white rounded hover:bg-white hover:text-mitwpu-navy transition-colors"
                 >
                   Log In
                 </Link>
-                <Link 
-                  to="/register" 
+                <Link
+                  to="/register"
                   className="px-4 py-2 bg-white text-mitwpu-navy rounded hover:bg-opacity-90 transition-colors"
                 >
                   Register
@@ -117,15 +144,33 @@ const Navbar: React.FC = () => {
             </Link>
             {user ? (
               <>
-                <Link to="/create" className="hover:text-gray-300" onClick={toggleMenu}>
+                <Link
+                  to="/create"
+                  className="hover:text-gray-300"
+                  onClick={toggleMenu}
+                >
                   Report Item
                 </Link>
-                <Link to="/dashboard" className="hover:text-gray-300" onClick={toggleMenu}>
+                <Link
+                  to="/dashboard"
+                  className="hover:text-gray-300"
+                  onClick={toggleMenu}
+                >
                   Dashboard
                 </Link>
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="hover:text-gray-300 flex items-center"
+                    onClick={toggleMenu}
+                  >
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </Link>
+                )}
                 <div className="py-2 border-t border-gray-700">
                   <p className="text-sm text-gray-300 mb-2">{user.email}</p>
-                  <button 
+                  <button
                     onClick={() => {
                       logout();
                       toggleMenu();
@@ -139,15 +184,15 @@ const Navbar: React.FC = () => {
               </>
             ) : (
               <>
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/login"
                   className="px-4 py-2 border border-white rounded text-center hover:bg-white hover:text-mitwpu-navy transition-colors"
                   onClick={toggleMenu}
                 >
                   Log In
                 </Link>
-                <Link 
-                  to="/register" 
+                <Link
+                  to="/register"
                   className="px-4 py-2 bg-white text-mitwpu-navy rounded text-center hover:bg-opacity-90 transition-colors"
                   onClick={toggleMenu}
                 >

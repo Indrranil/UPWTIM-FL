@@ -1,76 +1,188 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { CalendarIcon, MapPinIcon } from "lucide-react";
-import { Item } from "@/types/item";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { CATEGORIES, LOCATIONS } from "@/lib/constants";
+import { Button } from "@/components/ui/button";
+import { Item } from "@/types/item";
+import {
+  MapPin,
+  Calendar,
+  ArrowUpRight,
+  AlertTriangle,
+  Share2,
+} from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ReportForm } from "@/components/reports/ReportForm";
+import { useAuth } from "@/contexts/AuthContext";
+import { itemsApi } from "@/services/api";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface ItemCardProps {
   item: Item;
 }
 
 const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
-  const categoryLabel = CATEGORIES.find(cat => cat.value === item.category)?.label || item.category;
-  const locationLabel = item.location 
-    ? LOCATIONS.find(loc => loc.value === item.location)?.label || item.location
-    : "Location not specified";
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [matchingItems, setMatchingItems] = useState<Item[]>([]);
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
 
-  const formattedDate = new Date(item.date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
+  const fetchMatches = async () => {
+    if (isLoadingMatches || matchingItems.length > 0) return;
+
+    setIsLoadingMatches(true);
+    try {
+      const matches = await itemsApi.getMatchingItems(item.id);
+      setMatchingItems(matches);
+    } catch (error) {
+      console.error("Error fetching matching items:", error);
+    } finally {
+      setIsLoadingMatches(false);
+    }
+  };
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <div className="aspect-square relative overflow-hidden">
-        {item.imageUrl ? (
-          <img 
-            src={item.imageUrl} 
-            alt={item.title} 
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-            <span className="text-gray-500">No Image</span>
+    <Card className="overflow-hidden transition-all hover:shadow-md">
+      <AspectRatio ratio={16 / 9}>
+        <img
+          src={item.imageUrl || "/placeholder.svg"}
+          alt={item.title}
+          className="object-cover w-full h-full"
+        />
+      </AspectRatio>
+      <CardHeader className="p-4">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl line-clamp-1">{item.title}</CardTitle>
+          <Badge
+            variant={
+              item.status === "lost"
+                ? "destructive"
+                : item.status === "found"
+                  ? "default"
+                  : "secondary"
+            }
+          >
+            {item.status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-0 space-y-2">
+        <p className="text-muted-foreground text-sm line-clamp-2">
+          {item.description}
+        </p>
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Calendar className="h-4 w-4 mr-1" />
+          <span>{item.date}</span>
+        </div>
+        {item.location && (
+          <div className="flex items-center text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span>{item.location}</span>
           </div>
         )}
-        <Badge 
-          className={`absolute top-2 right-2 ${
-            item.status === "lost" ? "bg-red-500" : "bg-green-500"
-          }`}
-        >
-          {item.status === "lost" ? "Lost" : "Found"}
-        </Badge>
-      </div>
-      
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2 truncate">{item.title}</h3>
-        <p className="text-gray-600 text-sm line-clamp-2 mb-2">{item.description}</p>
-        <Badge variant="outline" className="mb-2">{categoryLabel}</Badge>
-        
-        <div className="flex flex-col space-y-1 text-sm text-gray-500">
-          <div className="flex items-center gap-1">
-            <CalendarIcon className="h-4 w-4" />
-            <span>{formattedDate}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <MapPinIcon className="h-4 w-4" />
-            <span>{locationLabel}</span>
-          </div>
-        </div>
       </CardContent>
-      
-      <CardFooter className="p-4 pt-0">
-        <Link 
-          to={`/items/${item.id}`}
-          className="w-full text-center py-2 bg-mitwpu-navy text-white rounded-md hover:bg-mitwpu-navy/90 transition-colors"
-        >
-          View Details
-        </Link>
+      <CardFooter className="p-4 pt-0 flex justify-between">
+        <Button variant="default" size="sm" asChild>
+          <Link to={`/items/${item.id}`}>
+            View Details <ArrowUpRight className="h-4 w-4 ml-1" />
+          </Link>
+        </Button>
+        <div className="flex gap-2">
+          {isAuthenticated && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchMatches}
+                  disabled={isLoadingMatches}
+                >
+                  <Share2 className="h-4 w-4 mr-1" />
+                  {isLoadingMatches ? "Loading..." : "Matches"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-72 p-0">
+                <div className="p-3 border-b">
+                  <h4 className="font-semibold">
+                    Potential {item.status === "lost" ? "Found" : "Lost"}{" "}
+                    Matches
+                  </h4>
+                </div>
+                <div className="p-2 max-h-80 overflow-y-auto">
+                  {matchingItems.length === 0 ? (
+                    <p className="text-sm text-gray-500 p-2">
+                      No potential matches found
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {matchingItems.map((match) => (
+                        <div key={match.id} className="flex gap-2 p-2 border-b">
+                          <div className="h-12 w-12 flex-shrink-0 bg-gray-100 rounded overflow-hidden">
+                            {match.imageUrl ? (
+                              <img
+                                src={match.imageUrl}
+                                alt={match.title}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">
+                                No image
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <h5 className="font-medium text-sm truncate">
+                              {match.title}
+                            </h5>
+                            <p className="text-xs text-gray-500 truncate">
+                              {match.description}
+                            </p>
+                            <Link
+                              to={`/items/${match.id}`}
+                              className="text-xs text-blue-600 hover:underline mt-1 block"
+                            >
+                              View item →
+                            </Link>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          {isAuthenticated && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReportDialogOpen(true)}
+            >
+              <AlertTriangle className="h-4 w-4 mr-1" /> Report
+            </Button>
+          )}
+        </div>
       </CardFooter>
+
+      {isAuthenticated && (
+        <ReportForm
+          itemId={item.id}
+          isOpen={reportDialogOpen}
+          onClose={() => setReportDialogOpen(false)}
+        />
+      )}
     </Card>
   );
 };

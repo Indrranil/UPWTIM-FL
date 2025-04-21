@@ -1,6 +1,16 @@
-
-import React, { createContext, useState, useContext, ReactNode, useEffect } from "react";
-import { AuthState, LoginCredentials, RegisterCredentials, User } from "@/types/auth";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  ReactNode,
+  useEffect,
+} from "react";
+import {
+  AuthState,
+  LoginCredentials,
+  RegisterCredentials,
+  User,
+} from "@/types/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { authApi } from "@/services/api";
 
@@ -8,6 +18,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
   register: (credentials: RegisterCredentials) => Promise<boolean>;
   logout: () => void;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,12 +29,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error: null,
     isLoading: false,
   });
-  
+
   const { toast } = useToast();
 
   // Check for existing token and get current user on mount
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem("authToken");
     if (token) {
       getCurrentUser();
     }
@@ -31,129 +42,147 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const getCurrentUser = async () => {
     try {
-      setAuthState(prev => ({ ...prev, isLoading: true }));
+      setAuthState((prev) => ({ ...prev, isLoading: true }));
       const user = await authApi.getCurrentUser();
+      console.log("Current user from API:", user); // Debug log
       setAuthState({
         user,
         isLoading: false,
-        error: null
+        error: null,
       });
     } catch (error) {
-      localStorage.removeItem('authToken');
+      localStorage.removeItem("authToken");
       setAuthState({
         user: null,
         isLoading: false,
-        error: "Session expired. Please login again."
+        error: "Session expired. Please login again.",
       });
     }
   };
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     setAuthState({ ...authState, isLoading: true, error: null });
-    
+
     try {
       const user = await authApi.login(credentials);
-      
+      console.log("Login response:", user); // Debug log
+
       // Store token from response (assumed to be in user object or response headers)
       if (user && user.token) {
-        localStorage.setItem('authToken', user.token);
+        localStorage.setItem("authToken", user.token);
       }
-      
+
       setAuthState({
         user,
         isLoading: false,
-        error: null
+        error: null,
       });
-      
+
       toast({
         title: "Login Successful",
         description: `Welcome back, ${user.name}!`,
       });
-      
+
       return true;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "An error occurred during login";
-      
+      const errorMessage =
+        error.response?.data?.message || "An error occurred during login";
+
       setAuthState({
         ...authState,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
       });
-      
+
       toast({
         title: "Login Failed",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
-      
+
       return false;
     }
   };
 
-  const register = async (credentials: RegisterCredentials): Promise<boolean> => {
+  const register = async (
+    credentials: RegisterCredentials,
+  ): Promise<boolean> => {
     setAuthState({ ...authState, isLoading: true, error: null });
-    
+
     try {
       const user = await authApi.register(credentials);
-      
+      console.log("Register response:", user); // Debug log
+
       // Store token from response (assumed to be in user object)
       if (user && user.token) {
-        localStorage.setItem('authToken', user.token);
+        localStorage.setItem("authToken", user.token);
       }
-      
+
       setAuthState({
         user,
         isLoading: false,
-        error: null
+        error: null,
       });
-      
+
       toast({
         title: "Registration Successful",
         description: `Welcome, ${user.name}!`,
       });
-      
+
       return true;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || "An error occurred during registration";
-      
+      const errorMessage =
+        error.response?.data?.message ||
+        "An error occurred during registration";
+
       setAuthState({
         ...authState,
         isLoading: false,
-        error: errorMessage
+        error: errorMessage,
       });
-      
+
       toast({
         title: "Registration Failed",
         description: errorMessage,
-        variant: "destructive"
+        variant: "destructive",
       });
-      
+
       return false;
     }
   };
 
   const logout = async () => {
     setAuthState({ ...authState, isLoading: true });
-    
+
     try {
       await authApi.logout();
+      localStorage.removeItem("authToken");
       setAuthState({ user: null, error: null, isLoading: false });
-      
+
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out",
       });
     } catch (error) {
       // Even if the API call fails, we'll still remove the token and log out the user
-      localStorage.removeItem('authToken');
+      localStorage.removeItem("authToken");
       setAuthState({ user: null, error: null, isLoading: false });
-      
+
       toast({
         title: "Logged Out",
         description: "You have been successfully logged out",
       });
     }
   };
+
+  // Check if the user has admin role
+  const isAdmin = Boolean(
+    authState.user &&
+      (authState.user.role === "ADMIN" || authState.user.role === "ROLE_ADMIN"),
+  );
+
+  // Debug log for admin status
+  console.log("User role:", authState.user?.role, "isAdmin:", isAdmin);
 
   return (
     <AuthContext.Provider
@@ -161,7 +190,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ...authState,
         login,
         register,
-        logout
+        logout,
+        isAdmin,
       }}
     >
       {children}

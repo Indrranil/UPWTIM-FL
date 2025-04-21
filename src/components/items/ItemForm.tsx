@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +5,6 @@ import * as z from "zod";
 import { useNavigate } from "react-router-dom";
 import { useItems } from "@/contexts/ItemsContext";
 import { CATEGORIES, LOCATIONS } from "@/lib/constants";
-import { ItemStatus } from "@/types/item";
 
 import {
   Form,
@@ -47,7 +45,7 @@ const itemSchema = z.object({
 type ItemFormValues = z.infer<typeof itemSchema>;
 
 interface ItemFormProps {
-  type: ItemStatus;
+  type: "lost" | "found";
 }
 
 const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
@@ -55,11 +53,11 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
   const navigate = useNavigate();
   const [includeSecretQuestion, setIncludeSecretQuestion] = useState(false);
   const [includeLocation, setIncludeLocation] = useState(true);
-  
+
   // For mock image upload
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   const form = useForm<ItemFormValues>({
     resolver: zodResolver(itemSchema),
     defaultValues: {
@@ -80,7 +78,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
     if (selectedImage) {
       values.imageUrl = selectedImage;
     }
-    
+
     // Prepare the item data with required fields
     const itemData = {
       title: values.title,
@@ -94,7 +92,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
       secretAnswer: includeSecretQuestion ? values.secretAnswer : undefined,
       imageUrl: values.imageUrl || undefined,
     };
-    
+
     const success = await createItem(itemData);
     if (success) {
       navigate("/dashboard");
@@ -107,17 +105,17 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
     if (file) {
       // Simulate upload
       setUploadProgress(0);
-      
+
       // Create URL for preview
       const reader = new FileReader();
       reader.onload = () => {
         setSelectedImage(reader.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       // Simulate progress
       const interval = setInterval(() => {
-        setUploadProgress(prev => {
+        setUploadProgress((prev) => {
           if (prev >= 100) {
             clearInterval(interval);
             return 100;
@@ -134,7 +132,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
         <h2 className="text-2xl font-bold mb-6">
           Report {type === "lost" ? "Lost" : "Found"} Item
         </h2>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -152,7 +150,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -160,17 +158,17 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Describe the item in detail" 
-                          rows={4} 
-                          {...field} 
+                        <Textarea
+                          placeholder="Describe the item in detail"
+                          rows={4}
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -189,7 +187,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                           </FormControl>
                           <SelectContent>
                             {CATEGORIES.map((category) => (
-                              <SelectItem key={category.value} value={category.value}>
+                              <SelectItem
+                                key={category.value}
+                                value={category.value}
+                              >
                                 {category.label}
                               </SelectItem>
                             ))}
@@ -199,7 +200,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="date"
@@ -214,18 +215,21 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                     )}
                   />
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="include-location"
                     checked={includeLocation}
                     onCheckedChange={setIncludeLocation}
                   />
-                  <label htmlFor="include-location" className="text-sm font-medium">
+                  <label
+                    htmlFor="include-location"
+                    className="text-sm font-medium"
+                  >
                     Include Location
                   </label>
                 </div>
-                
+
                 {includeLocation && (
                   <FormField
                     control={form.control}
@@ -244,7 +248,10 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                           </FormControl>
                           <SelectContent>
                             {LOCATIONS.map((location) => (
-                              <SelectItem key={location.value} value={location.value}>
+                              <SelectItem
+                                key={location.value}
+                                value={location.value}
+                              >
                                 {location.label}
                               </SelectItem>
                             ))}
@@ -256,27 +263,27 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                   />
                 )}
               </div>
-              
+
               <div className="space-y-6">
                 <div>
                   <FormLabel>Upload Image</FormLabel>
                   <div className="mt-1 border-2 border-dashed rounded-md p-6 flex flex-col items-center">
                     <div className="mb-4">
                       {selectedImage ? (
-                        <img 
-                          src={selectedImage} 
-                          alt="Selected" 
-                          className="max-h-40 max-w-full rounded-md" 
+                        <img
+                          src={selectedImage}
+                          alt="Selected"
+                          className="max-h-40 max-w-full rounded-md"
                         />
                       ) : (
                         <ImagePlusIcon className="h-12 w-12 text-gray-300" />
                       )}
                     </div>
-                    
+
                     {uploadProgress > 0 && uploadProgress < 100 ? (
                       <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-4">
-                        <div 
-                          className="bg-mitwpu-navy h-2.5 rounded-full" 
+                        <div
+                          className="bg-mitwpu-navy h-2.5 rounded-full"
                           style={{ width: `${uploadProgress}%` }}
                         ></div>
                       </div>
@@ -285,7 +292,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => document.getElementById("image-upload")?.click()}
+                          onClick={() =>
+                            document.getElementById("image-upload")?.click()
+                          }
                         >
                           {selectedImage ? "Change Image" : "Select Image"}
                         </Button>
@@ -298,13 +307,13 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                         />
                       </div>
                     )}
-                    
+
                     <p className="text-xs text-gray-500 mt-2">
                       Upload a clear image of the item (optional)
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Switch
@@ -312,11 +321,14 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                       checked={includeSecretQuestion}
                       onCheckedChange={setIncludeSecretQuestion}
                     />
-                    <label htmlFor="include-secret-question" className="text-sm font-medium">
+                    <label
+                      htmlFor="include-secret-question"
+                      className="text-sm font-medium"
+                    >
                       Include Secret Question
                     </label>
                   </div>
-                  
+
                   {includeSecretQuestion && (
                     <>
                       <FormField
@@ -326,9 +338,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                           <FormItem>
                             <FormLabel>Secret Question</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="E.g., What was written on the item?" 
-                                {...field} 
+                              <Input
+                                placeholder="E.g., What was written on the item?"
+                                {...field}
                               />
                             </FormControl>
                             <FormDescription>
@@ -338,7 +350,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <FormField
                         control={form.control}
                         name="secretAnswer"
@@ -346,9 +358,9 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                           <FormItem>
                             <FormLabel>Secret Answer</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Answer to your secret question" 
-                                {...field} 
+                              <Input
+                                placeholder="Answer to your secret question"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage />
@@ -360,7 +372,7 @@ const ItemForm: React.FC<ItemFormProps> = ({ type }) => {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex justify-end">
               <Button
                 type="button"
